@@ -152,8 +152,20 @@ def format_vacancy_message(vacancy: dict) -> str:
     else:
         salary = "Не указана"
     
+    # Format experience
+    experience_map = {
+        "noExperience": "Без опыта",
+        "between1And3": "1-3 года",
+        "between3And6": "3-6 лет",
+        "moreThan6": "Более 6 лет",
+    }
+    exp_data = vacancy.get("experience", {})
+    experience = experience_map.get(exp_data.get("id", ""), exp_data.get("name", "Не указан"))
+    
     area = vacancy.get("area", {}).get("name", "")
     url = vacancy.get("alternate_url", vacancy.get("url", ""))
+    # Replace hh.ru with hh.uz for Uzbekistan app deep linking
+    url = url.replace("hh.ru", "hh.uz")
     
     published_at = vacancy.get("published_at", "")
     if published_at:
@@ -170,6 +182,7 @@ def format_vacancy_message(vacancy: dict) -> str:
         f"📋 <b>{title}</b>\n"
         f"🏢 {employer}\n"
         f"📍 {area}\n"
+        f"💼 Опыт: {experience}\n"
         f"💰 {salary}\n"
         f"📅 Опубликовано: {published}\n\n"
         f"🔗 <a href=\"{url}\">Открыть вакансию</a>"
