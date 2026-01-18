@@ -109,7 +109,7 @@ def fetch_vacancies(query: str) -> list:
     params = {
         "text": query,
         "area": UZBEKISTAN_AREA_ID,
-        "experience": EXPERIENCE_FILTER,
+        # "experience": EXPERIENCE_FILTER,
         "per_page": 100,
         "order_by": "publication_time",
     }
