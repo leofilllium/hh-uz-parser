@@ -27,7 +27,11 @@ UZBEKISTAN_AREA_ID = "97"
 SEARCH_QUERIES = [
     "младший юрист",
     "коммерческий юрист",
+    "юрист",
 ]
 
-# Experience filter - no experience required
-EXPERIENCE_FILTER = "noExperience"
+# Experience filters - no experience, up to 1 year, 1-3 years
+EXPERIENCE_FILTERS = [
+    "noExperience",
+    "between1And3",
+]

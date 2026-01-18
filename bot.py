@@ -21,7 +21,7 @@ from config import (
     HH_API_BASE_URL,
     UZBEKISTAN_AREA_ID,
     SEARCH_QUERIES,
-    EXPERIENCE_FILTER,
+    EXPERIENCE_FILTERS,
 )
 from database import (
     init_db,
@@ -64,14 +64,18 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         f"👋 Привет, <b>{user.first_name or 'друг'}</b>!\n\n"
         f"🔔 Вы подписаны на уведомления о вакансиях:\n"
         f"• младший юрист\n"
-        f"• коммерческий юрист\n\n"
+        f"• коммерческий юрист\n"
+        f"• юрист\n\n"
         f"📍 Регион: Узбекистан\n"
-        f"🎯 Фильтр: без опыта работы\n"
+        f"🎯 Опыт: без опыта / до 3 лет\n"
         f"⏱ Проверка каждые {CHECK_INTERVAL // 60} мин.\n\n"
         f"Чтобы отписаться, отправьте /stop\n\n"
         f"👥 Всего подписчиков: {active}"
     )
     logger.info(f"User subscribed: {user.id} (@{user.username})")
+    
+    # Send current vacancies to the new user
+    asyncio.create_task(send_existing_vacancies_to_user(context.bot, user.id))
 
 
 async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -103,16 +107,17 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
 # ==================== Vacancy Functions ====================
 
-def fetch_vacancies(query: str) -> list:
-    """Fetch vacancies from hh.uz API for a given search query."""
+def fetch_vacancies(query: str, experience: str = None) -> list:
+    """Fetch vacancies from hh.uz API for a given search query and experience level."""
     url = f"{HH_API_BASE_URL}/vacancies"
     params = {
         "text": query,
         "area": UZBEKISTAN_AREA_ID,
-        # "experience": EXPERIENCE_FILTER,
         "per_page": 100,
         "order_by": "publication_time",
     }
+    if experience:
+        params["experience"] = experience
     
     try:
         response = requests.get(url, params=params, timeout=30)
@@ -195,20 +200,81 @@ async def send_to_all_users(bot: Bot, message: str) -> int:
     return sent_count
 
 
+async def send_existing_vacancies_to_user(bot: Bot, telegram_id: int) -> None:
+    """Send existing vacancies to a newly subscribed user."""
+    await asyncio.sleep(1)  # Small delay after welcome message
+    
+    all_vacancies = []
+    seen_ids = set()
+    
+    for query in SEARCH_QUERIES:
+        for experience in EXPERIENCE_FILTERS:
+            vacancies = fetch_vacancies(query, experience)
+            for vacancy in vacancies:
+                vacancy_id = str(vacancy.get("id"))
+                if vacancy_id and vacancy_id not in seen_ids:
+                    all_vacancies.append(vacancy)
+                    seen_ids.add(vacancy_id)
+                    # Mark as seen so others don't get duplicates
+                    mark_vacancy_seen(vacancy_id)
+    
+    if all_vacancies:
+        # Send header
+        try:
+            await bot.send_message(
+                chat_id=telegram_id,
+                text=f"📋 <b>Текущие вакансии ({len(all_vacancies)} шт.):</b>",
+                parse_mode="HTML"
+            )
+        except TelegramError as e:
+            logger.warning(f"Failed to send header to {telegram_id}: {e}")
+            return
+        
+        await asyncio.sleep(0.5)
+        
+        # Send vacancies (limit to 20 to avoid spam)
+        for vacancy in all_vacancies[:20]:
+            try:
+                message = format_vacancy_message(vacancy)
+                await bot.send_message(
+                    chat_id=telegram_id,
+                    text=message,
+                    parse_mode="HTML",
+                    disable_web_page_preview=False
+                )
+                await asyncio.sleep(0.3)
+            except TelegramError as e:
+                logger.warning(f"Failed to send vacancy to {telegram_id}: {e}")
+                break
+        
+        if len(all_vacancies) > 20:
+            try:
+                await bot.send_message(
+                    chat_id=telegram_id,
+                    text=f"... и ещё {len(all_vacancies) - 20} вакансий. Новые будут приходить автоматически!",
+                    parse_mode="HTML"
+                )
+            except TelegramError:
+                pass
+
+
 async def check_new_vacancies(bot: Bot) -> None:
     """Check for new vacancies and send notifications to all users."""
     new_vacancies = []
+    seen_in_this_run = set()  # Avoid duplicates across query/experience combos
     
     for query in SEARCH_QUERIES:
-        logger.info(f"Checking vacancies for: {query}")
-        vacancies = fetch_vacancies(query)
-        
-        for vacancy in vacancies:
-            vacancy_id = str(vacancy.get("id"))
+        for experience in EXPERIENCE_FILTERS:
+            logger.info(f"Checking vacancies for: {query} (experience: {experience})")
+            vacancies = fetch_vacancies(query, experience)
             
-            if vacancy_id and not is_vacancy_seen(vacancy_id):
-                new_vacancies.append(vacancy)
-                mark_vacancy_seen(vacancy_id)
+            for vacancy in vacancies:
+                vacancy_id = str(vacancy.get("id"))
+                
+                if vacancy_id and vacancy_id not in seen_in_this_run and not is_vacancy_seen(vacancy_id):
+                    new_vacancies.append(vacancy)
+                    mark_vacancy_seen(vacancy_id)
+                    seen_in_this_run.add(vacancy_id)
     
     if new_vacancies:
         logger.info(f"Found {len(new_vacancies)} new vacancies, sending to users...")
