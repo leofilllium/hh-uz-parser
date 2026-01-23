@@ -21,13 +21,14 @@ DATABASE_URL = os.getenv(
 HH_API_BASE_URL = "https://api.hh.ru"
 
 # Uzbekistan area ID for filtering vacancies
-UZBEKISTAN_AREA_ID = "97"
+# 2759 = Tashkent
+UZBEKISTAN_AREA_ID = "2759"
 
 # Search queries for vacancy positions
 SEARCH_QUERIES = [
     "младший юрист",
     "коммерческий юрист",
-    "юрист",
+    "помощник юриста",
 ]
 
 # Experience filters - no experience, up to 1 year, 1-3 years

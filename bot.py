@@ -231,6 +231,12 @@ async def send_existing_vacancies_to_user(bot: Bot, telegram_id: int) -> None:
                     # Mark as seen so others don't get duplicates
                     mark_vacancy_seen(vacancy_id)
     
+    # Sort by published_at descending (newest first)
+    all_vacancies.sort(
+        key=lambda x: x.get("published_at", ""),
+        reverse=True
+    )
+    
     if all_vacancies:
         # Send header
         try:
@@ -288,6 +294,12 @@ async def check_new_vacancies(bot: Bot) -> None:
                     new_vacancies.append(vacancy)
                     mark_vacancy_seen(vacancy_id)
                     seen_in_this_run.add(vacancy_id)
+    
+    # Sort new vacancies by published_at descending (newest first)
+    new_vacancies.sort(
+        key=lambda x: x.get("published_at", ""),
+        reverse=True
+    )
     
     if new_vacancies:
         logger.info(f"Found {len(new_vacancies)} new vacancies, sending to users...")
