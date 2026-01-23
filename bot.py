@@ -115,6 +115,8 @@ def fetch_vacancies(query: str, experience: str = None) -> list:
         "area": UZBEKISTAN_AREA_ID,
         "per_page": 100,
         "order_by": "publication_time",
+        "search_field": "name",
+        "excluded_text": "водитель,курьер,оператор,менеджер по продажам",
     }
     if experience:
         params["experience"] = experience
