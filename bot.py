@@ -121,8 +121,13 @@ def fetch_vacancies(query: str, experience: str = None) -> list:
     if experience:
         params["experience"] = experience
     
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    
     try:
-        response = requests.get(url, params=params, timeout=30)
+        response = requests.get(url, params=params, headers=headers, timeout=30)
         response.raise_for_status()
         data = response.json()
         return data.get("items", [])
