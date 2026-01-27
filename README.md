@@ -1,6 +1,6 @@
 # HH.uz Vacancy Notification Bot
 
-Telegram бот для отслеживания вакансий "младший юрист" и "коммерческий юрист" без опыта работы на hh.uz.
+Telegram бот для отслеживания вакансий Flutter developer и Middle Flutter developer на hh.uz.
 
 ## Возможности
 
@@ -72,8 +72,9 @@ python bot.py
 
 ```python
 SEARCH_QUERIES = [
-    "младший юрист",
-    "коммерческий юрист",
+    "Flutter developer",
+    "Middle Flutter developer",
+    "Flutter",
 ]
 ```
 

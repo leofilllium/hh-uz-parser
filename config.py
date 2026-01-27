@@ -25,10 +25,9 @@ UZBEKISTAN_AREA_ID = "2759"
 
 # Search queries for vacancy positions
 SEARCH_QUERIES = [
-    "младший юрист",
-    "коммерческий юрист",
-    "юрист",
-    "помощник юриста",
+    "Flutter",
+    "Flutter разработчик",
+    "Middle Flutter разработчик",
 ]
 
 # Experience filters - no experience, up to 1 year, 1-3 years

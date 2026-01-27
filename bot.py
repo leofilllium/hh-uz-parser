@@ -2,8 +2,8 @@
 """
 HH.uz Vacancy Notification Telegram Bot
 
-Monitors hh.uz for new job vacancies for "младший юрист" and "коммерческий юрист"
-positions with no experience required, and sends Telegram notifications to subscribed users.
+Monitors hh.uz for new job vacancies for "Flutter developer" and "Middle Flutter developer"
+positions, and sends Telegram notifications to subscribed users.
 """
 import asyncio
 import logging
@@ -63,9 +63,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await update.message.reply_html(
         f"👋 Привет, <b>{user.first_name or 'друг'}</b>!\n\n"
         f"🔔 Вы подписаны на уведомления о вакансиях:\n"
-        f"• младший юрист\n"
-        f"• коммерческий юрист\n"
-        f"• юрист\n\n"
+        f"• Flutter developer\n"
+        f"• Middle Flutter developer\n"
+        f"• Flutter\n\n"
         f"📍 Регион: Узбекистан\n"
         f"🎯 Опыт: без опыта / до 3 лет\n"
         f"⏱ Проверка каждые {CHECK_INTERVAL // 60} мин.\n\n"
