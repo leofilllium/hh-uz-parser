@@ -1,6 +1,9 @@
 """Database models and connection for HH.uz Telegram Bot."""
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Boolean, DateTime
+from sqlalchemy import (
+    create_engine, Column, Integer, BigInteger, String, Boolean, DateTime,
+    UniqueConstraint,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -34,6 +37,19 @@ class SeenVacancy(Base):
     
     def __repr__(self):
         return f"<SeenVacancy(vacancy_id={self.vacancy_id})>"
+
+
+class UserSeenVacancy(Base):
+    """Vacancy notification history, tracked separately for each subscriber."""
+    __tablename__ = "user_seen_vacancies"
+    __table_args__ = (
+        UniqueConstraint("telegram_id", "vacancy_id", name="uq_user_seen_vacancy"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(BigInteger, nullable=False, index=True)
+    vacancy_id = Column(String(50), nullable=False, index=True)
+    notified_at = Column(DateTime, default=datetime.utcnow)
 
 
 # Database engine and session
@@ -149,5 +165,31 @@ def get_seen_vacancy_ids() -> set:
     try:
         vacancies = db.query(SeenVacancy.vacancy_id).all()
         return {v.vacancy_id for v in vacancies}
+    finally:
+        db.close()
+
+
+def is_vacancy_seen_by_user(telegram_id: int, vacancy_id: str) -> bool:
+    """Return whether this vacancy has already been delivered to this user."""
+    db = SessionLocal()
+    try:
+        return db.query(UserSeenVacancy).filter(
+            UserSeenVacancy.telegram_id == telegram_id,
+            UserSeenVacancy.vacancy_id == vacancy_id,
+        ).first() is not None
+    finally:
+        db.close()
+
+
+def mark_vacancy_seen_by_user(telegram_id: int, vacancy_id: str) -> None:
+    """Record a successful vacancy delivery for exactly one user."""
+    db = SessionLocal()
+    try:
+        if not db.query(UserSeenVacancy).filter(
+            UserSeenVacancy.telegram_id == telegram_id,
+            UserSeenVacancy.vacancy_id == vacancy_id,
+        ).first():
+            db.add(UserSeenVacancy(telegram_id=telegram_id, vacancy_id=vacancy_id))
+            db.commit()
     finally:
         db.close()
